@@ -1,0 +1,9 @@
+{
+    "cmake.buildDirectory": "${workspaceFolder}/build/debug",
+    "cmake.generator": "Ninja",
+    "C_Cpp.default.compileCommands": "compile_commands.json",
+    "clangd.arguments": [
+        "--compile-commands-dir=build/debug",
+        "--header-insertion=iwyu"
+    ]
+}

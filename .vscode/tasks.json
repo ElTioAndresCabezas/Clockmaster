@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake: build (Debug)",
+            "type": "shell",
+            "command": "cmake --build ${workspaceFolder}/build/debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Compila el proyecto en modo Debug usando Ninja"
+        },
+        {
+            "label": "cmake: configure (Debug)",
+            "type": "shell",
+            "command": "cmake -B ${workspaceFolder}/build/debug -G Ninja -DCMAKE_BUILD_TYPE=Debug",
+            "problemMatcher": [],
+            "detail": "Genera los archivos de construcción para Debug"
+        },
+        {
+            "label": "cmake: build (Release)",
+            "type": "shell",
+            "command": "cmake --build ${workspaceFolder}/build/linux",
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "detail": "Compila el proyecto optimizado en modo Release para Linux"
+        },
+        {
+            "label": "cmake: configure (Release Linux)",
+            "type": "shell",
+            "command": "cmake -B ${workspaceFolder}/build/linux -G Ninja -DCMAKE_BUILD_TYPE=Release",
+            "problemMatcher": [],
+            "detail": "Genera los archivos de construcción para Release Linux"
+        },
+        {
+            "label": "cmake: build Windows (.exe)",
+            "type": "shell",
+            "command": "cmake --build ${workspaceFolder}/build/windows",
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "detail": "Compila el binario cruzado para Windows usando MinGW"
+        },
+        {
+            "label": "cmake: configure Windows (.exe)",
+            "type": "shell",
+            "command": "cmake -B ${workspaceFolder}/build/windows -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-mingw64.cmake -DCMAKE_BUILD_TYPE=Release",
+            "problemMatcher": [],
+            "detail": "Genera los archivos de construcción cruzada para Windows"
+        },
+        {
+            "label": "package: Windows (.zip)",
+            "type": "shell",
+            "command": "mkdir -p ${workspaceFolder}/dist && zip -j ${workspaceFolder}/dist/clockmaster-windows.zip ${workspaceFolder}/build/windows/clockmaster.exe ${workspaceFolder}/build/windows/slint_cpp.dll",
+            "dependsOn": ["cmake: build Windows (.exe)"],
+            "problemMatcher": [],
+            "detail": "Empaqueta el ejecutable y DLL de Windows en dist/clockmaster-windows.zip"
+        },
+        {
+            "label": "package: Linux (.tar.gz)",
+            "type": "shell",
+            "command": "mkdir -p ${workspaceFolder}/dist ${workspaceFolder}/build/linux/stage && cp ${workspaceFolder}/build/linux/clockmaster ${workspaceFolder}/build/linux/_deps/slint-build/libslint_cpp.so ${workspaceFolder}/build/linux/stage/ && patchelf --set-rpath '$ORIGIN' ${workspaceFolder}/build/linux/stage/clockmaster && tar -C ${workspaceFolder}/build/linux/stage -cf ${workspaceFolder}/dist/clockmaster-linux.tar clockmaster libslint_cpp.so && tar -C ${workspaceFolder}/build/linux/stage -czf ${workspaceFolder}/dist/clockmaster-linux.tar.gz clockmaster libslint_cpp.so && rm -rf ${workspaceFolder}/build/linux/stage",
+            "dependsOn": ["cmake: build (Release)"],
+            "problemMatcher": [],
+            "detail": "Empaqueta el ejecutable y libslint_cpp.so de Linux en dist/clockmaster-linux.tar.gz"
+        },
+        {
+            "label": "package: all",
+            "dependsOn": ["package: Windows (.zip)", "package: Linux (.tar.gz)"],
+            "problemMatcher": [],
+            "detail": "Construye y empaqueta las versiones de Windows y Linux en dist/"
+        }
+    ]
+}

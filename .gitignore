@@ -1,0 +1,26 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+bin/
+dist/
+
+# Cache & temporary files
+.cache/
+target/
+*.user
+*.orig
+*.rej
+compile_commands.json
+
+# IDE & Editor settings
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+.idea/
+*.swp
+*~
+
+# Slint generated files if generated in-tree
+*.slint.h

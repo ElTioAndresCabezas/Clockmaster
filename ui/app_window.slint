@@ -1,0 +1,218 @@
+import { Button, LineEdit, ScrollView, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+
+export { Theme }
+
+export struct TimerData {
+    id: int,
+    name: string,
+    time_display: string,
+    is_running: bool,
+}
+
+component MarqueeText inherits Rectangle {
+    in property <string> text: "Lorem Ipsum";
+    in property <color> text_color: Theme.text;
+    in property <length> font_size: 14px;
+    in property <duration> speed: 30ms;
+
+    clip: true;
+    min-width: 40px;
+    horizontal-stretch: 1;
+    height: 20px;
+
+    touch := TouchArea {}
+
+    property <bool> is_overflowing: txt.preferred-width > root.width;
+    property <length> max_scroll: root.is_overflowing ? (txt.preferred-width - root.width + 8px) : 0px;
+
+    property <float> scroll_progress: touch.has-hover ? 1.0 : 0.0;
+
+    animate scroll_progress {
+        duration: touch.has-hover ? 2s : 300ms;
+        delay: touch.has-hover ? 300ms : 0ms;
+        easing: ease-in-out;
+    }
+
+    txt := Text {
+        x: - root.scroll_progress * root.max_scroll;
+        y: (root.height - self.height) / 2;
+        text: root.text;
+        color: root.text_color;
+        font-size: root.font_size;
+        font-weight: 600;
+    }
+}
+
+component TimerCard inherits Rectangle {
+    in property <TimerData> timer;
+
+    in property <image> start_icon: @image-url("../icons/start.svg");
+    in property <image> pause_icon: @image-url("../icons/pause.svg");
+    in property <image> restart_icon: @image-url("../icons/restart.svg");
+    in property <image> delete_icon: @image-url("../icons/delete.svg");
+
+    callback toggle_timer();
+    callback reset_timer();
+    callback remove_timer();
+
+    background: Theme.surface;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: root.timer.is_running ? Theme.active : Theme.border;
+    height: 36px;
+
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 12px;
+
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            spacing: 10px;
+            cross-axis-alignment: center;
+
+            Rectangle {
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: root.timer.is_running ? Theme.active : Theme.inactive;
+            }
+
+            MarqueeText {
+                text: root.timer.name;
+                font_size: 14px;
+                text_color: Theme.text;
+            }
+        }
+
+        HorizontalLayout {
+            horizontal-stretch: 0;
+            spacing: 8px;
+            alignment: end;
+            padding-top: 4px;
+            padding-bottom: 4px;
+
+            Text {
+                width: 75px;
+                horizontal-alignment: right;
+                text: root.timer.time_display;
+                font-size: 14px;
+                font-weight: 700;
+                color: root.timer.is_running ? Theme.active : Theme.text-subtle;
+                vertical-alignment: center;
+            }
+
+            Button {
+                icon: root.timer.is_running ? pause_icon : start_icon;
+                colorize-icon: true;
+                primary: !root.timer.is_running;
+                clicked => { root.toggle_timer(); }
+            }
+
+            Button {
+                icon: restart_icon;
+                colorize-icon: true;
+                enabled: !root.timer.is_running;
+                clicked => { root.reset_timer(); }
+            }
+
+            Button {
+                icon: delete_icon;
+                colorize-icon: true;
+                clicked => { root.remove_timer(); }
+            }
+        }
+    }
+}
+
+export component MainWindow inherits Window {
+    in-out property <string> window_title: "Clockmaster";
+    title: root.window_title;
+    min-width: 400px;
+    min-height: 300px;
+    preferred-width: 600px;
+    preferred-height: 420px;
+    background: Theme.background;
+    default-font-family: "sans-serif";
+
+    in-out property <[TimerData]> timers: [];
+
+    callback add_timer(string);
+    callback toggle_timer(int);
+    callback reset_timer(int);
+    callback remove_timer(int);
+
+    VerticalBox {
+        padding: 20px;
+        spacing: 16px;
+
+        HorizontalLayout {
+            spacing: 8px;
+            height: 34px;
+            vertical-stretch: 0;
+
+            new_name_input := LineEdit {
+                placeholder-text: "Nombre";
+                font-size: 14px;
+                accepted => {
+                    root.add_timer(self.text);
+                    self.text = "";
+                }
+            }
+
+            Button {
+                text: "+";
+                primary: true;
+                clicked => {
+                    root.add_timer(new_name_input.text);
+                    new_name_input.text = "";
+                }
+            }
+        }
+
+        if root.timers.length == 0: Rectangle {
+            vertical-stretch: 1;
+            background: Theme.surface;
+            border-radius: 10px;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalBox {
+                alignment: center;
+                spacing: 12px;
+                padding: 40px;
+
+                Text {
+                    text: "No hay cronómetros activos";
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: Theme.text;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: "Escribe un nombre arriba y presiona \"+\" para comenzar a medir tu tiempo.";
+                    font-size: 13px;
+                    color: Theme.text-muted;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        if root.timers.length > 0: ScrollView {
+            VerticalBox {
+                spacing: 10px;
+                alignment: start;
+
+                for timer in root.timers: TimerCard {
+                    timer: timer;
+                    toggle_timer => { root.toggle_timer(timer.id); }
+                    reset_timer => { root.reset_timer(timer.id); }
+                    remove_timer => { root.remove_timer(timer.id); }
+                }
+            }
+        }
+    }
+}
